@@ -23,7 +23,8 @@ import re
 import pandas as pd
 
 # Get all of the match URLs
-matchListURL = "http://stats.espnscrum.com/statsguru/rugby/stats/index.html?class=1;page={0};spanmax1=31+dec+2015;spanmin1=1+jan+2015;spanval1=span;template=results;trophy=17;type=team;view=results"
+# matchListURL = "http://stats.espnscrum.com/statsguru/rugby/stats/index.html?class=1;page={0};spanmax1=31+dec+2015;spanmin1=1+jan+2015;spanval1=span;template=results;trophy=17;type=team;view=results"
+matchListURL = "http://stats.espnscrum.com/statsguru/rugby/stats/index.html?class=1;page={0};orderby=date;spanmax1=31+dec+2019;spanmin1=1+jan+2019;spanval1=span;template=results;trophy=17;type=team;view=match"
 
 # Guessing that there wont be more than 10 pages
 matches = []
@@ -41,6 +42,8 @@ for i in range(10):
 
 # Get the unique pages
 matches = list(set(matches))
+
+#%%
 
 
 def GetStat(statName, text):
@@ -72,6 +75,10 @@ for match in matches:
     matchURL = baseURL + match['href'] + "?view=scorecard"
     matchWebpage = str(BeautifulSoup(urllib.request.urlopen(matchURL).read()))
 
+    # These are games not yet played
+    if len(matchWebpage) < 6000:
+        continue
+
     teams = GetTeamNames(matchWebpage)
     matchID = GetMatchID(matchURL)
     points = GetResult(matchWebpage)
@@ -99,4 +106,6 @@ for match in matches:
                         'Reds': int(cards[i][1])}, ignore_index=True)
 
 df.set_index("TeamName", inplace=True)
+
+df.to_csv('Matches.csv')
 
