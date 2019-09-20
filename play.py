@@ -54,6 +54,11 @@ for game in ff:
     print(game,file=f)
 f.close()
 
+
+#%%
+# Create empty df for storing the team scores
+df = pd.DataFrame(columns=['a', 'b', 'c'], index=['e','f','g'])
+df = df.fillna(0)
 #%%
 dd = "ddflk{0}"
 print(dd.format(3))
