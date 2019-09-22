@@ -21,6 +21,7 @@ import urllib.request
 from bs4 import BeautifulSoup
 import re
 import pandas as pd
+import time
 
 # Get all of the match URLs
 # matchListURL = "http://stats.espnscrum.com/statsguru/rugby/stats/index.html?class=1;page={0};spanmax1=31+dec+2015;spanmin1=1+jan+2015;spanval1=span;template=results;trophy=17;type=team;view=results"
@@ -34,7 +35,6 @@ for i in range(10):
 
     # find all of the links relating to matche
     temp = webpage.findAll(href=re.compile("/statsguru/rugby/match/"))
-    dd = len(temp)
     if len(temp) > 0:
         matches.extend(list(temp))
     else:
@@ -73,6 +73,7 @@ df = pd.DataFrame(columns = ['TeamName', 'MatchID', 'Opponent', 'PointsFor', 'Po
 baseURL = "http://stats.espnscrum.com"
 for match in matches:
     matchURL = baseURL + match['href'] + "?view=scorecard"
+    print(matchURL)
     matchWebpage = str(BeautifulSoup(urllib.request.urlopen(matchURL).read()))
 
     # These are games not yet played
@@ -104,8 +105,44 @@ for match in matches:
                         'DropGoals': int(dropgoals[i]),
                         'Yellows': int(cards[i][0]),
                         'Reds': int(cards[i][1])}, ignore_index=True)
+    
+    time.sleep(2)
 
 df.set_index("TeamName", inplace=True)
 
 df.to_csv('Matches.csv')
 
+#%%
+url = "https://www.rugbyworldcup.com/matches"
+
+webpage = BeautifulSoup(urllib.request.urlopen(url).read())
+
+f = open('output.txt', 'w')
+print(webpage, file=f)
+f.close()
+
+# https://cmsapi.pulselive.com/rugby/match/25294/stats?language=en
+# https://www.rugbyworldcup.com/matches
+
+#%%
+matchesPageURL = "https://www.rugbyworldcup.com/matches"
+matchesPage = str(BeautifulSoup(urllib.request.urlopen(url).read()))
+
+pattern = '"url": "https:\/\/www\.rugbyworldcup\.com\/match\/(\d*)"'
+matches = re.findall(pattern, matchesPage)
+
+
+
+#%%
+import json
+statURL = 'https://cmsapi.pulselive.com/rugby/match/{0}/stats?language=en'
+
+webpage = urllib.request.urlopen(statURL.format(matches[0]))
+data = json.loads(webpage.read().decode())
+f = open('output.txt', 'w')
+print(json.dumps(data, indent=4), file=f)
+f.close()
+
+#%%
+data['match']['teams'][0]['name']
+data['teamStats'][0]['stats']['BallWonZoneA']
