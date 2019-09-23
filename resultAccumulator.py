@@ -65,7 +65,7 @@ def AccumulateResults():
     # Calculate Totals
     teams['Total'] = teams[cols[1:]].sum(axis=1)
 
-    teams.to_csv('TeamResults.csv')
+    teams.round(2).to_csv('TeamResults.csv')
 
     return teams
 
