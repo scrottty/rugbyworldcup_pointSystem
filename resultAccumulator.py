@@ -6,7 +6,7 @@ Accumulates the results into a table with points for each team across the points
 import pandas as pd
 
 def AccumulateResults():
-    cols = ['Tier', 'Win', 'Lose', 'NumTackles', 'Passes', 'Meters', 'Breaks', 'DropGoals', 'Yellows', 'Reds']
+    cols = ['Tier', 'Games', 'Win Points', 'Lose Points', 'NumTackles', 'Passes', 'Meters', 'Breaks', 'DropGoals', 'Yellows', 'Reds']
     tier1 = ['Ireland', 'New Zealand', 'South Africa', 'England', 'Argentina', 'Australia', 'Wales', 'France']
     tier2 = ['Scotland', 'Japan', 'Italy', 'USA', 'Fiji', 'Georgia', 'Samoa', 'Tonga']
     tier3 = ['Russia', 'Namibia', 'Canada', 'Uruguay']
@@ -37,17 +37,20 @@ def AccumulateResults():
         tierby1 = (teams.loc[team, 'Tier'] - teams.loc[match.loc[team, 'Opponent'], 'Tier']) > 0
         tierby2 = (teams.loc[team, 'Tier'] - teams.loc[match.loc[team, 'Opponent'], 'Tier']) > 1
         win = match.loc[team,'PointsFor'] >= match.loc[team, 'PointsAgainst']
-        teams.loc[team ,'Win'] += 2 * win + 2 * tierby1 * win + 6 * tierby2 * win
+        teams.loc[team ,'Win Points'] += 2 * win + 2 * tierby1 * win + 6 * tierby2 * win
 
         # Lose Points
         lose = (match.loc[team,'PointsFor'] > match.loc[team, 'PointsAgainst'] - 7) & ~win
-        teams.loc[team ,'Lose'] += 1 * lose + 1 * tierby1 * lose + 3 * tierby2 * lose
+        teams.loc[team ,'Lose Points'] += 1 * lose + 1 * tierby1 * lose + 3 * tierby2 * lose
+
+        # Games played
+        teams.loc[team, 'Games'] += 1
 
         # Tackle %
         # teams.loc[team ,'Tackle%'] += 2 * match.loc[team, 'Tackle%']
 
         # Propotional Points
-        for col in cols[3:7]:
+        for col in cols[4:8]:
             total = (match.loc[team, col]+ match.loc[match.loc[team, 'Opponent'],col])
             if total > 0:
                 teams.loc[team ,col] += 2 * (match.loc[team, col] / total)
@@ -63,7 +66,7 @@ def AccumulateResults():
         teams.loc[team, 'Reds'] -= match.loc[team, 'Reds'] * 2
 
     # Calculate Totals
-    teams['Total'] = teams[cols[1:]].sum(axis=1)
+    teams['Total'] = teams[cols[2:]].sum(axis=1)
 
     teams.round(2).to_csv('TeamResults.csv')
 

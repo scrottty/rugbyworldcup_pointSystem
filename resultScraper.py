@@ -41,7 +41,7 @@ statURL = 'https://cmsapi.pulselive.com/rugby/match/{0}/stats?language=en'
 df = pd.DataFrame(columns = ['TeamName', 'MatchID', 'Opponent', 'PointsFor', 'PointsAgainst', 'Tackle%', 'NumTackles', 'Passes', 'Meters', 'Breaks', 'DropGoals', 'Yellows', 'Reds'])
 
 for match, matchRun in zip(matches, matchStatus):
-    if matchRun == 'Upcoming':
+    if matchRun != 'Complete':
         continue
 
     print('Downloading match: ' + match)
@@ -49,22 +49,44 @@ for match, matchRun in zip(matches, matchStatus):
     webpage = urllib.request.urlopen(statURL.format(match)).read()
     data = json.loads(webpage.decode())
 
+    # Nil all draw suggests cancelled game
+    cancelledGame = False
+    if (data['match']['scores'][0] == 0) and (data['match']['scores'][1] == 0):
+        cancelledGame = True
+
     # Do for each team
     for i in range(2):
-        df = df.append({'TeamName': data['match']['teams'][i]['name'], 
-                        'MatchID' : data['match']['matchId'],
-                        'Opponent': data['match']['teams'][1]['name'] if i==0 else data['match']['teams'][0]['name'],
-                        'PointsFor': data['match']['scores'][i],
-                        'PointsAgainst': data['match']['scores'][1] if i==0 else data['match']['scores'][0],
-                        'Tackle%': data['teamStats'][i]['stats']['TackleSuccess'],
-                        'NumTackles': data['teamStats'][i]['stats']['Tackles'],
-                        'Passes': data['teamStats'][i]['stats']['Passes'],
-                        'Meters': data['teamStats'][i]['stats']['Metres'],
-                        'Breaks': data['teamStats'][i]['stats']['clean_breaks'],
-                        'DropGoals': sum([x['stats']['DropGoals'] for x in data['teamStats'][i]['playerStats'] if 'DropGoals' in x['stats']]),
-                        'Yellows': sum([x['stats']['YellowCards'] for x in data['teamStats'][i]['playerStats'] if 'YellowCards' in x['stats']]),
-                        'Reds': sum([x['stats']['RedCards'] for x in data['teamStats'][i]['playerStats'] if 'RedCards' in x['stats']])},
-                        ignore_index=True)
+        if not cancelledGame:
+            df = df.append({'TeamName': data['match']['teams'][i]['name'], 
+                            'MatchID' : data['match']['matchId'],
+                            'Opponent': data['match']['teams'][1]['name'] if i==0 else data['match']['teams'][0]['name'],
+                            'PointsFor': data['match']['scores'][i],
+                            'PointsAgainst': data['match']['scores'][1] if i==0 else data['match']['scores'][0],
+                            'Tackle%': data['teamStats'][i]['stats']['TackleSuccess'],
+                            'NumTackles': data['teamStats'][i]['stats']['Tackles'],
+                            'Passes': data['teamStats'][i]['stats']['Passes'],
+                            'Meters': data['teamStats'][i]['stats']['Metres'],
+                            'Breaks': data['teamStats'][i]['stats']['clean_breaks'] if 'clean_breaks' in data['teamStats'][i]['stats'] else 0,
+                            'DropGoals': sum([x['stats']['DropGoals'] for x in data['teamStats'][i]['playerStats'] if 'DropGoals' in x['stats']]),
+                            'Yellows': sum([x['stats']['YellowCards'] for x in data['teamStats'][i]['playerStats'] if 'YellowCards' in x['stats']]),
+                            'Reds': sum([x['stats']['RedCards'] for x in data['teamStats'][i]['playerStats'] if 'RedCards' in x['stats']])},
+                            ignore_index=True)
+        else:
+            df = df.append({'TeamName': data['match']['teams'][i]['name'], 
+                            'MatchID' : data['match']['matchId'],
+                            'Opponent': data['match']['teams'][1]['name'] if i==0 else data['match']['teams'][0]['name'],
+                            'PointsFor': 0,
+                            'PointsAgainst': 0,
+                            'Tackle%': 1,
+                            'NumTackles': 1,
+                            'Passes': 1,
+                            'Meters': 1,
+                            'Breaks': 1,
+                            'DropGoals': 1,
+                            'Yellows': 0,
+                            'Reds': 0},
+                            ignore_index=True)
+
 
 df.set_index("TeamName", inplace=True)
 
